@@ -3,12 +3,21 @@ import { handleTts } from "./handlers/tts";
 import { handleVoices } from "./handlers/voices";
 import { errorResponse, noContent, withCors } from "./lib/http";
 
-async function routeRequest(request: Request) {
+async function routeRequest(request: Request, env: Env) {
   const { pathname } = new URL(request.url);
 
+  // CORS preflight пропускаем без авторизации — иначе браузерные клиенты не смогут достучаться
   if (request.method === "OPTIONS") {
     return noContent();
   }
+
+  // --- Защита API-ключом ---
+  const authHeader = request.headers.get("Authorization");
+  const expected = `Bearer ${env.API_KEY}`;
+  if (authHeader !== expected) {
+    return errorResponse(401, "UNAUTHORIZED", "invalid or missing API key");
+  }
+  // --- /Защита ---
 
   if (pathname === "/health") {
     if (request.method !== "GET") {
@@ -40,11 +49,11 @@ async function routeRequest(request: Request) {
 export default {
   async fetch(
     request: Request,
-    _env: Env,
+    env: Env,
     _ctx: ExecutionContext
   ): Promise<Response> {
     try {
-      const response = await routeRequest(request);
+      const response = await routeRequest(request, env);
       return withCors(response);
     } catch {
       return errorResponse(500, "INTERNAL_ERROR", "unexpected internal error");
