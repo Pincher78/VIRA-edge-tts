@@ -162,7 +162,8 @@ export async function handleTts(request: Request) {
         "Content-Type": "audio/mpeg",
       },
     });
-  } catch {
+    } catch (error) {
+    console.error("TTS ERROR:", error);
     return errorResponse(502, "TTS_UPSTREAM_ERROR", "failed to synthesize audio");
   }
 }
