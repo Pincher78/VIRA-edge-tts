@@ -11,14 +11,7 @@ async function routeRequest(request: Request, env: Env) {
     return noContent();
   }
 
-  // --- Защита API-ключом ---
-  const authHeader = request.headers.get("Authorization");
-  const expected = `Bearer ${env.API_KEY}`;
-  if (authHeader !== expected) {
-    return errorResponse(401, "UNAUTHORIZED", "invalid or missing API key");
-  }
-  // --- /Защита ---
-
+  
   if (pathname === "/health") {
     if (request.method !== "GET") {
       return errorResponse(405, "METHOD_NOT_ALLOWED", "method not allowed");
