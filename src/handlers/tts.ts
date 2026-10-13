@@ -142,15 +142,16 @@ export async function handleTts(request: Request) {
     );
   }
 
+    // ============================================================
+  // ВРЕМЕННО ОТКЛЮЧЕНО: расстановка ударений через словарь.
+  // Словарь U+0301 ломает Edge TTS, поэтому пока передаём текст
+  // в Edge TTS как есть — с ошибками ударений, но зато без "акцента".
+  // Когда развернём kokoro-ru на своём сервере — включим обратно.
   // ============================================================
-  // РАССТАНАВЛИВАЕМ УДАРЕНИЯ ПЕРЕД СИНТЕЗОМ
-  // ============================================================
-
-  const textWithStress = applyStress(parsed.text);
 
   try {
     const stream = await createAudioStream({
-      text: textWithStress,
+      text: parsed.text,
       voice: parsed.voice,
     });
     const primedStream = await primeAudioStream(stream);
