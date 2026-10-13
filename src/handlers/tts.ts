@@ -1,5 +1,6 @@
 import { createAudioStream } from "../lib/tts";
 import { CORS_HEADERS, errorResponse } from "../lib/http";
+import { dictionary } from "../dict.js";
 
 type TtsBody = {
   text?: unknown;
@@ -36,6 +37,38 @@ function parseBody(body: unknown) {
     text: text.trim(),
     voice: typeof voice === "string" ? voice.trim() : voice,
   };
+}
+
+// ============================================================
+// РАССТАНОВКА УДАРЕНИЙ
+//
+// Разбивает текст на слова, ищет каждое слово в словаре,
+// и если находит — заменяет на версию со знаком ударения.
+// Знаки препинания (.,!?;:) сохраняются отдельно.
+// ============================================================
+
+function applyStress(text: string): string {
+  // Разбиваем текст на «слова» и «разделители» (пробелы, знаки препинания).
+  // Это позволяет сохранять исходный текст с пунктуацией, но менять только слова.
+  return text.replace(/([А-Яа-яЁё]+)/g, (match) => {
+    // Приводим к нижнему регистру для поиска в словаре
+    const lower = match.toLowerCase();
+
+    // Ищем слово в словаре
+    const accented = (dictionary as Record<string, string>)[lower];
+
+    if (!accented) {
+      // Слова нет в словаре — оставляем как есть
+      return match;
+    }
+
+    // Если слово в тексте было с большой буквы — сохраняем заглавную
+    if (match[0] === match[0].toUpperCase() && match[0] !== match[0].toLowerCase()) {
+      return accented.charAt(0).toUpperCase() + accented.slice(1);
+    }
+
+    return accented;
+  });
 }
 
 async function primeAudioStream(stream: ReadableStream<Uint8Array>) {
@@ -109,8 +142,17 @@ export async function handleTts(request: Request) {
     );
   }
 
+  // ============================================================
+  // РАССТАНАВЛИВАЕМ УДАРЕНИЯ ПЕРЕД СИНТЕЗОМ
+  // ============================================================
+
+  const textWithStress = applyStress(parsed.text);
+
   try {
-    const stream = await createAudioStream(parsed);
+    const stream = await createAudioStream({
+      text: textWithStress,
+      voice: parsed.voice,
+    });
     const primedStream = await primeAudioStream(stream);
 
     return new Response(primedStream, {
