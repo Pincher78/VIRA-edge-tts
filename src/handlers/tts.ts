@@ -162,8 +162,13 @@ export async function handleTts(request: Request) {
         "Content-Type": "audio/mpeg",
       },
     });
-    } catch (error) {
+      } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error("TTS ERROR:", error);
-    return errorResponse(502, "TTS_UPSTREAM_ERROR", "failed to synthesize audio");
+    return errorResponse(
+      502,
+      "TTS_UPSTREAM_ERROR",
+      `failed to synthesize audio: ${message}`
+    );
   }
 }
