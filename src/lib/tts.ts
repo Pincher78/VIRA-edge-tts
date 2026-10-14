@@ -1,10 +1,8 @@
 export const DEFAULT_VOICE = "en-US-AvaMultilingualNeural";
 
-const READALOUD_BASE =
-  "speech.platform.bing.com/consumer/speech/synthesize/readaloud";
 const TRUSTED_CLIENT_TOKEN = "6A5AA1D4EAFF4E9FB37E23D68491D6F4";
-const VOICE_LIST_URL = `https://${READALOUD_BASE}/voices/list?trustedclienttoken=${TRUSTED_CLIENT_TOKEN}`;
-const SYNTHESIS_URL = `https://${READALOUD_BASE}/edge/v1`;
+const VOICE_LIST_URL = "https://api.msedgeservices.com/tts/cognitiveservices/voices/list";
+const SYNTHESIS_URL = "wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1";
 const CHROMIUM_FULL_VERSION = "143.0.3650.75";
 const CHROMIUM_MAJOR_VERSION = CHROMIUM_FULL_VERSION.split(".")[0];
 const SEC_MS_GEC_VERSION = `1-${CHROMIUM_FULL_VERSION}`;
@@ -26,7 +24,7 @@ const UPGRADE_HEADERS = {
 
 const VOICE_HEADERS = {
   ...BASE_HEADERS,
-  Authority: "speech.platform.bing.com",
+  "Ocp-Apim-Subscription-Key": TRUSTED_CLIENT_TOKEN,
   "Sec-CH-UA": `" Not;A Brand";v="99", "Microsoft Edge";v="${CHROMIUM_MAJOR_VERSION}", "Chromium";v="${CHROMIUM_MAJOR_VERSION}"`,
   "Sec-CH-UA-Mobile": "?0",
   Accept: "*/*",
@@ -146,7 +144,6 @@ async function makeSecMsGec(runtime: TtsRuntime) {
 
 function buildSynthesisUrl(secMsGec: string, connectionId: string) {
   const url = new URL(SYNTHESIS_URL);
-  url.searchParams.set("TrustedClientToken", TRUSTED_CLIENT_TOKEN);
   url.searchParams.set("Sec-MS-GEC", secMsGec);
   url.searchParams.set("Sec-MS-GEC-Version", SEC_MS_GEC_VERSION);
   url.searchParams.set("ConnectionId", connectionId);
@@ -421,11 +418,12 @@ export async function createAudioStream(
   const connectionId = makeConnectionId(runtime);
   const websocketUrl = buildSynthesisUrl(secMsGec, connectionId);
   const response = (await runtime.fetch(websocketUrl, {
-    headers: {
-      ...UPGRADE_HEADERS,
-      Cookie: `muid=${makeMuid(runtime)};`,
-    },
-  })) as UpgradeResponse;
+  headers: {
+    ...UPGRADE_HEADERS,
+    "Ocp-Apim-Subscription-Key": TRUSTED_CLIENT_TOKEN,
+    Cookie: `muid=${makeMuid(runtime)};`,
+  },
+})) as UpgradeResponse;
 
   if (response.status !== 101 || !response.webSocket) {
     throw new Error(`WebSocket upgrade failed with status ${response.status}`);
