@@ -144,6 +144,7 @@ async function makeSecMsGec(runtime: TtsRuntime) {
 
 function buildSynthesisUrl(secMsGec: string, connectionId: string) {
   const url = new URL(SYNTHESIS_URL);
+  url.searchParams.set("Ocp-Apim-Subscription-Key", TRUSTED_CLIENT_TOKEN);
   url.searchParams.set("Sec-MS-GEC", secMsGec);
   url.searchParams.set("Sec-MS-GEC-Version", SEC_MS_GEC_VERSION);
   url.searchParams.set("ConnectionId", connectionId);
