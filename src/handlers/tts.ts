@@ -141,3 +141,4 @@ export async function handleTts(request: Request) {
       `failed to synthesize audio: ${message}`
     );
   }
+}
