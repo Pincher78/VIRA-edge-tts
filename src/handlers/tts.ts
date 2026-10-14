@@ -1,6 +1,5 @@
 import { createAudioStream } from "../lib/tts";
 import { CORS_HEADERS, errorResponse } from "../lib/http";
-import { dictionary } from "../dict.js";
 
 type TtsBody = {
   text?: unknown;
@@ -40,36 +39,7 @@ function parseBody(body: unknown) {
 }
 
 // ============================================================
-// РАССТАНОВКА УДАРЕНИЙ
-//
-// Разбивает текст на слова, ищет каждое слово в словаре,
-// и если находит — заменяет на версию со знаком ударения.
-// Знаки препинания (.,!?;:) сохраняются отдельно.
-// ============================================================
 
-function applyStress(text: string): string {
-  // Разбиваем текст на «слова» и «разделители» (пробелы, знаки препинания).
-  // Это позволяет сохранять исходный текст с пунктуацией, но менять только слова.
-  return text.replace(/([А-Яа-яЁё]+)/g, (match) => {
-    // Приводим к нижнему регистру для поиска в словаре
-    const lower = match.toLowerCase();
-
-    // Ищем слово в словаре
-    const accented = (dictionary as Record<string, string>)[lower];
-
-    if (!accented) {
-      // Слова нет в словаре — оставляем как есть
-      return match;
-    }
-
-    // Если слово в тексте было с большой буквы — сохраняем заглавную
-    if (match[0] === match[0].toUpperCase() && match[0] !== match[0].toLowerCase()) {
-      return accented.charAt(0).toUpperCase() + accented.slice(1);
-    }
-
-    return accented;
-  });
-}
 
 async function primeAudioStream(stream: ReadableStream<Uint8Array>) {
   const reader = stream.getReader();
@@ -149,21 +119,25 @@ export async function handleTts(request: Request) {
   // Когда развернём kokoro-ru на своём сервере — включим обратно.
   // ============================================================
 
-  try {
+    try {
     const stream = await createAudioStream({
       text: parsed.text,
       voice: parsed.voice,
     });
-    const primedStream = await primeAudioStream(stream);
 
-    return new Response(primedStream, {
+    return new Response(stream, {
       status: 200,
       headers: {
         ...CORS_HEADERS,
         "Content-Type": "audio/mpeg",
       },
     });
-        } catch {
-    return errorResponse(502, "TTS_UPSTREAM_ERROR", "failed to synthesize audio");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("TTS ERROR:", error);
+    return errorResponse(
+      502,
+      "TTS_UPSTREAM_ERROR",
+      `failed to synthesize audio: ${message}`
+    );
   }
-}
