@@ -6,7 +6,7 @@
 
 export const DEFAULT_VOICE = "ru-RU-SvetlanaNeural";
 
-const VIRA_TTS_SERVER = "http://80.234.91.193:8300";
+const VIRA_TTS_SERVER = "http://80.234.91.193";
 
 export type TtsInput = {
   text: string;
