@@ -6,7 +6,7 @@
 
 export const DEFAULT_VOICE = "ru-RU-SvetlanaNeural";
 
-const VIRA_TTS_SERVER = "http://80.234.91.193";
+const VIRA_TTS_SERVER = "https://flows-honor-snowboard-sign.trycloudflare.com";
 
 export type TtsInput = {
   text: string;
